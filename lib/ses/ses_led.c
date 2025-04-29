@@ -22,11 +22,11 @@
 /* FUNCTION DEFINITION *******************************************************/
 
 void led_redInit(void) {
-// TODO
+    LED_RED_DDR |= (1 << LED_RED_BIT);   // Set pin as output
 }
 
 void led_redToggle(void) {
-// TODO
+    LED_RED_PORT ^= (1 << LED_RED_BIT);  // Toggle LED state
 }
 
 void led_redOn(void) {
