@@ -28,7 +28,7 @@ void adc_init(void) {
  */
 uint16_t adc_read(uint8_t adc_channel) {
     // Check if the provided channel is valid
-    if (adc_channel > ADC_MAX_CHANNEL) {
+    if (adc_channel != ADC_LIGHT_CH && adc_channel != ADC_POTI_CH && adc_channel != ADC_TEMP_CH) {
         return ADC_INVALID_CHANNEL; // Return invalid channel error
     }
 
