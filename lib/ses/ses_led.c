@@ -19,7 +19,7 @@
 #define LED_YELLOW_BIT      3
 
 
-/* FUNCTION DEFINITION *******************************************************/
+/* FUNCTION DEFINITIONS ******************************************************/
 
 void led_redInit(void) {
     LED_RED_DDR |= (1 << LED_RED_BIT);   // Set pin as output
@@ -30,41 +30,42 @@ void led_redToggle(void) {
 }
 
 void led_redOn(void) {
-// TODO
+    LED_RED_PORT &= ~(1 << LED_RED_BIT);      // Drive pin low → LED ON
 }
 
 void led_redOff(void) {
-// TODO
+    LED_RED_PORT |= (1 << LED_RED_BIT);       // Drive pin high → LED OFF
 }
 
 void led_yellowInit(void) {
-// TODO
+    LED_YELLOW_DDR |= (1 << LED_YELLOW_BIT);  // Set pin as output
 }
 
 void led_yellowToggle(void) {
-// TODO
+    LED_YELLOW_PORT ^= (1 << LED_YELLOW_BIT); // Toggle LED state
 }
 
 void led_yellowOn(void) {
-// TODO
+    LED_YELLOW_PORT |= (1 << LED_YELLOW_BIT); // Set pin high
 }
 
 void led_yellowOff(void) {
-// TODO
+    LED_YELLOW_PORT &= ~(1 << LED_YELLOW_BIT); // Set pin low
 }
 
 void led_greenInit(void) {
-// TODO
+    LED_GREEN_DDR |= (1 << LED_GREEN_BIT); // Set pin as output
 }
 
 void led_greenToggle(void) {
-// TODO
+    LED_GREEN_PORT ^= (1 << LED_GREEN_BIT);   // Toggle pin state
 }
 
 void led_greenOn(void) {
-// TODO
+    LED_GREEN_PORT &= ~(1 << LED_GREEN_BIT);  // Drive pin low → LED ON
 }
 
 void led_greenOff(void) {
-// TODO
+    LED_GREEN_PORT |= (1 << LED_GREEN_BIT);  // Set pin high (turn off LED)
 }
+
