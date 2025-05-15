@@ -23,6 +23,8 @@ bool button_isPushButtonPressed(void);
 bool button_isRotaryButtonPressed(void);
 
 typedef void (*pButtonCallback)(void);
+
+//Callback functions
 void button_setRotaryButtonCallback(pButtonCallback callback);
 void button_setPushButtonCallback(pButtonCallback callback);
 
