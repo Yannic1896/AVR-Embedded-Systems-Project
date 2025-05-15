@@ -22,5 +22,8 @@ bool button_isPushButtonPressed(void);
  */
 bool button_isRotaryButtonPressed(void);
 
+typedef void (*pButtonCallback)(void);
+void button_setRotaryButtonCallback(pButtonCallback callback);
+void button_setPushButtonCallback(pButtonCallback callback);
 
 #endif /* SES_BUTTON_H_ */
