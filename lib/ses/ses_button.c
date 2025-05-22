@@ -14,11 +14,17 @@
 #define BUTTON_PUSH_DDR     DDRB
 #define BUTTON_PUSH_BIT     4
 
-// Function pointers for button callbacks
-static pButtonCallback rotaryButtonCallback = NULL;
-static pButtonCallback pushButtonCallback = NULL;
+#define BUTTON_NUM_DEBOUNCE_CHECKS 5
+#define BUTTON_DEBOUNCE_POS_PUSHBUTTON 0x01
+#define BUTTON_DEBOUNCE_POS_ROTARYBUTTON 0x02
 
-void button_init(void) {
+// Function pointers for button callbacks
+pButtonCallback rotaryButtonCallback = NULL;
+pButtonCallback pushButtonCallback = NULL;
+
+void button_init(bool debouncing) {
+    // Common initialization for both techniques
+    
     // Configure rotary button pin as input
     BUTTON_ROTARY_DDR &= ~(1 << BUTTON_ROTARY_BIT);
     // Activate internal pull-up resistor for rotary button
@@ -29,11 +35,25 @@ void button_init(void) {
     // Activate internal pull-up resistor for push button
     BUTTON_PUSH_PORT |= (1 << BUTTON_PUSH_BIT);
 
-    // Enable pin change interrupt for PORTB in PCICR
-    PCICR |= (1 << PCIE0); // PCIE0 corresponds to PORTB
-
-    // Enable pin change interrupt for the specific pins in PCMSK0
-    PCMSK0 |= (1 << BUTTON_ROTARY_BIT) | (1 << BUTTON_PUSH_BIT);
+    if (debouncing) {
+        // Initialization for debouncing technique
+        timer1_setCallback(button_checkState);
+        timer1_start();  // Start the debounce timer
+        
+        // Disable pin change interrupts for debouncing mode
+        PCICR &= ~(1 << PCIE0);
+        PCMSK0 &= ~((1 << BUTTON_ROTARY_BIT) | (1 << BUTTON_PUSH_BIT));
+    } else {
+        // Initialization for direct interrupt technique
+        // Enable pin change interrupt for PORTB in PCICR
+        PCICR |= (1 << PCIE0); // PCIE0 corresponds to PORTB
+        
+        // Enable pin change interrupt for the specific pins in PCMSK0
+        PCMSK0 |= (1 << BUTTON_ROTARY_BIT) | (1 << BUTTON_PUSH_BIT);
+        
+        // Stop the debounce timer if it was running
+        timer1_stop();
+    }
 }
 
 bool button_isPushButtonPressed(void) {
@@ -52,6 +72,51 @@ void button_setRotaryButtonCallback(pButtonCallback callback) {
 
 void button_setPushButtonCallback(pButtonCallback callback) {
     pushButtonCallback = callback; // Store the callback function pointer
+}
+
+void button_checkState()
+{
+    static uint8_t state[BUTTON_NUM_DEBOUNCE_CHECKS] = { 0 };
+    static uint8_t index = 0;
+    static uint8_t debouncedState = 0;
+    uint8_t lastDebouncedState = debouncedState;
+
+    // each bit in every state byte represents one button
+    state[index] = 0;
+    if (button_isPushButtonPressed()) {
+        state[index] |= BUTTON_DEBOUNCE_POS_PUSHBUTTON;
+    }
+    if (button_isRotaryButtonPressed()) {
+        state[index] |= BUTTON_DEBOUNCE_POS_ROTARYBUTTON;
+    }
+
+    index++;
+    if (index == BUTTON_NUM_DEBOUNCE_CHECKS) {
+        index = 0;
+    }
+
+    // init compare value and compare with ALL reads, only if
+    // we read BUTTON_NUM_DEBOUNCE_CHECKS consistent "1's" in the state
+    // array, the button at this position is considered pressed
+    uint8_t j = 0xFF;
+    for (uint8_t i = 0; i < BUTTON_NUM_DEBOUNCE_CHECKS; i++) {
+        j = j & state[i];
+    }
+    debouncedState = j;
+
+    // Check for push button press (transition from not pressed to pressed)
+    if ((debouncedState & BUTTON_DEBOUNCE_POS_PUSHBUTTON) && 
+        !(lastDebouncedState & BUTTON_DEBOUNCE_POS_PUSHBUTTON) && 
+        pushButtonCallback != NULL) {
+        pushButtonCallback();
+    }
+
+    // Check for rotary button press (transition from not pressed to pressed)
+    if ((debouncedState & BUTTON_DEBOUNCE_POS_ROTARYBUTTON) && 
+        !(lastDebouncedState & BUTTON_DEBOUNCE_POS_ROTARYBUTTON) && 
+        rotaryButtonCallback != NULL) {
+        rotaryButtonCallback();
+    }
 }
 
 ISR(PCINT0_vect) {

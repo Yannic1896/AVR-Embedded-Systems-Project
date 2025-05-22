@@ -2,10 +2,15 @@
 #include "ses_timer.h"
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include "ses_button.h"
 
 /* DEFINES & MACROS **********************************************************/
 #define TIMER0_CYC_FOR_1MILLISEC    ((F_CPU / 64 / 1000) - 1)
 #define TIMER1_CYC_FOR_5MILLISEC    ((F_CPU / 64 / 200) - 1)
+
+#define BUTTON_NUM_DEBOUNCE_CHECKS 5
+#define BUTTON_DEBOUNCE_POS_PUSHBUTTON 0x01
+#define BUTTON_DEBOUNCE_POS_ROTARYBUTTON 0x02
 
 /* GLOBAL VARIABLES **********************************************************/
 static pTimerCallback timer0_callback = 0;
@@ -14,6 +19,9 @@ static pTimerCallback timer1_callback = 0;
 /* FUNCTION DEFINITIONS ******************************************************/
 void timer0_setCallback(pTimerCallback cb) {
     timer0_callback = cb;
+}
+void timer1_setCallback(pTimerCallback cb) {
+    timer1_callback = cb;
 }
 
 void timer0_start() {
@@ -29,12 +37,10 @@ void timer0_stop() {
     TIMSK0 &= ~(1 << OCIE0A);                     // Disable Timer0 interrupt
 }
 
-void timer1_setCallback(pTimerCallback cb) {
-    timer1_callback = cb;
-}
 
 void timer1_start() {
-    TCCR1B |= (1 << WGM12);                       // CTC mode
+    TCCR1A = 0;                                   // Normal mode (WGM10=0, WGM11=0)
+    TCCR1B |= (1 << WGM12);                       // CTC mode (WGM12=1, WGM13=0)
     TCCR1B |= (1 << CS11) | (1 << CS10);          // Prescaler = 64
     OCR1A = TIMER1_CYC_FOR_5MILLISEC;             // Set compare value for 5ms
     TIMSK1 |= (1 << OCIE1A);                      // Enable Timer1 Compare A interrupt
@@ -45,6 +51,7 @@ void timer1_stop() {
     TCCR1B = 0;                                   // Stop Timer1
     TIMSK1 &= ~(1 << OCIE1A);                     // Disable Timer1 interrupt
 }
+
 
 /* INTERRUPT SERVICE ROUTINES ************************************************/
 ISR(TIMER0_COMPA_vect) {

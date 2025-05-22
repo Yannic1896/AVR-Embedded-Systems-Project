@@ -10,7 +10,7 @@
 /**
  * Initializes rotary encoder button and pushbutton
  */
-void button_init(void);
+void button_init(bool debouncing);
 
 /** 
  * Get the state of the pushbutton.
@@ -27,5 +27,7 @@ typedef void (*pButtonCallback)(void);
 //Callback functions
 void button_setRotaryButtonCallback(pButtonCallback callback);
 void button_setPushButtonCallback(pButtonCallback callback);
+
+void button_checkState();
 
 #endif /* SES_BUTTON_H_ */
