@@ -41,6 +41,7 @@ void scheduler_init() {
     // Initialize timer with 1ms callback
     timer0_setCallback(&scheduler_update);
     timer0_start();
+    sei(); // Enable global interrupts
 }
 
 void scheduler_run() {
