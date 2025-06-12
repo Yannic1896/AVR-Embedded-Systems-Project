@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include "ses_display.h"
 #include <util/delay.h>
+#include "ses_usbserial.h"
 
 typedef enum{
     RED,
@@ -16,6 +17,7 @@ static led_color toggle_color = GREEN;
 
 void led_toggle_task(void *param);
 void turn_off_yellow(void * param);
+void stopwatch(void *param);
 
 bool yellow_led_on = false;
 bool stopwatch_running = false;
@@ -78,19 +80,24 @@ void onPushButtonPressed(void) {
         led_yellowOff();
         yellow_led_on = false;
         scheduler_remove(&turnOffYellowTask);
+        turnOffYellowTask.expire = 5000;
     }
 }
 
 void onRotaryButtonPressed(void) {
     if(!stopwatch_running) {
         scheduler_add(&startStopwatchTask);
+        stopwatch_running = true;
     }else {
         scheduler_remove(&startStopwatchTask);
+        stopwatch_running = false;
+        stopwatch_time = 0;
     }
 }
 
-void stopwatch(void) {
+void stopwatch(void *param) {
     if (stopwatch_running){
+        fprintf(serialout, "Rotary\n");
         stopwatch_time++;
         display_setCursor(0,0);
         fprintf(displayout, "Time: %2u.%1u s", stopwatch_time / 10, stopwatch_time % 10);
@@ -101,6 +108,8 @@ void stopwatch(void) {
 void turn_off_yellow(void *param) {
     led_yellowOff();
     yellow_led_on = false;
+    scheduler_remove(&turnOffYellowTask);
+    turnOffYellowTask.expire = 5000;
 }
 
 int main(void) {
@@ -112,15 +121,12 @@ int main(void) {
     button_init(true);
     
     button_setPushButtonCallback(onPushButtonPressed);
+    button_setRotaryButtonCallback(onRotaryButtonPressed);
 
     // Initially turn LED's off
     led_redOff();
     led_yellowOff();
     led_greenOff();
-    
-    display_setCursor(0,0);
-    fprintf(displayout, "Disp\n");
-    display_update();
 
     usbserial_init();
 
