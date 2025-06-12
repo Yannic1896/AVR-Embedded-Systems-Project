@@ -65,8 +65,4 @@ void led_greenOn(void) {
 
 void led_greenOff(void) {
     LED_GREEN_PORT |= (1 << LED_GREEN_BIT);  // Set pin high to turn LED off
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> Jannis
