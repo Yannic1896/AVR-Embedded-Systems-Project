@@ -1,45 +1,31 @@
-#include "ses_button.h"
-#include "ses_led.h"
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include "ses_button.c"
+#include "ses_led.c"
 #include <util/delay.h>
+#include "ses_usbserial.h"
 
-// Function to toggle the red LED
-void toggleRedLed(void) {
-    led_redToggle(); // Toggle the red LED
+void onPushButtonPressed(void) {
+    led_redToggle();
 }
 
-// Function to toggle the green LED
-void toggleGreenLed(void) {
-    led_greenToggle(); // Toggle the green LED
+void onRotaryButtonPressed(void) {
+    led_greenToggle();
 }
 
 int main(void) {
-    // Initialize LEDs
     led_redInit();
     led_greenInit();
+    button_init(false);
+
     sei();
 
-    // Turn off LEDs initially
-    led_redOff();
-    led_greenOff();
+    button_setPushButtonCallback(onPushButtonPressed);
+    button_setRotaryButtonCallback(onRotaryButtonPressed);
 
-    // Initialize buttons
-    button_init();
-
-    // Set button callbacks
-    button_setRotaryButtonCallback(toggleRedLed);   // Rotary button toggles red LED
-    button_setPushButtonCallback(toggleGreenLed);  // Push button toggles green LED
-
-    // Main loop
-    while (1) {
-        
-        // The program relies on interrupts to handle button presses
-        // No additional code is needed in the main loop
-        _delay_ms(500);
-
+    while(1){
+        _delay_ms(100);
     }
 
     return 0;
 }
-

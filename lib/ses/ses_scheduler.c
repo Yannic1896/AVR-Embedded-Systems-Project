@@ -41,68 +41,71 @@ void scheduler_init() {
     // Initialize timer with 1ms callback
     timer0_setCallback(&scheduler_update);
     timer0_start();
-    sei(); // Enable global interrupts
+    sei();
 }
 
 void scheduler_run() {
     while (1) {
-        ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-            task_descriptor_t* current = taskList;
-            task_descriptor_t* prev = NULL;
-            
-            while (current != NULL) {
+        task_descriptor_t *current = taskList;
+
+        while (current != NULL) {
+            uint8_t shouldExecute = 0;
+
+            // Read and clear execute flag atomically
+            ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
                 if (current->execute) {
-                    // Execute the task
-                    current->task(current->param);
                     current->execute = 0;
-                    
-                    // Remove one-shot tasks
-                    if (current->period == 0) {
-                        task_descriptor_t* toRemove = current;
-                        
-                        if (prev == NULL) {
-                            // First element in list
-                            taskList = current->next;
-                        } else {
-                            prev->next = current->next;
-                        }
-                        
-                        current = current->next;
-                        free(toRemove);
-                        continue;
-                    }
+                    shouldExecute = 1;
                 }
-                prev = current;
-                current = current->next;
             }
+
+            if (shouldExecute) {
+                current->task(current->param);  // Run the task
+
+                if (current->period > 0) {
+                    // Reschedule periodic task
+                    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+                        current->expire = current->period;
+                    }
+                } else {
+                    // One-shot task — remove it
+                    task_descriptor_t *toRemove = current;
+                    current = current->next;  // Save next before removal
+                    scheduler_remove(toRemove);
+                    continue;  // Skip current = current->next;
+                }
+            }
+
+            current = current->next;
         }
     }
 }
 
 bool scheduler_add(task_descriptor_t * toAdd) {
-    if (toAdd == NULL || toAdd->task == NULL) {
+
+    //Check if task is invalid
+    if (toAdd == NULL || toAdd->task == NULL){
         return false;
     }
-    
-    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-        // Check if task already exists in the list
-        task_descriptor_t* current = taskList;
-        while (current != NULL) {
-            if (current == toAdd) {
-                return false;
-            }
-            current = current->next;
+
+    // Check if task is alreadey in task list
+    task_descriptor_t *current = taskList;
+    while (current != NULL){
+        if (current == toAdd){
+            return false;       // Task already in list
         }
-        
-        // Initialize task descriptor
-        toAdd->execute = 0;
-        toAdd->next = NULL;
-        
-        // Add to beginning of list
+        current = current->next;
+    }
+
+    // Initialize internal fields
+    toAdd->execute = 0;
+    toAdd->next = NULL;
+
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
         toAdd->next = taskList;
         taskList = toAdd;
     }
-    
+
     return true;
 }
 
@@ -110,24 +113,22 @@ void scheduler_remove(const task_descriptor_t * toRemove) {
     if (toRemove == NULL) {
         return;
     }
-    
+
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-        task_descriptor_t* current = taskList;
-        task_descriptor_t* prev = NULL;
-        
+        task_descriptor_t *current = taskList;
+        task_descriptor_t *prev = NULL;
+
         while (current != NULL) {
             if (current == toRemove) {
                 if (prev == NULL) {
-                    // First element in list
+                    // Task is at the head
                     taskList = current->next;
                 } else {
                     prev->next = current->next;
                 }
-                
-                free(current);
-                break;
+                break;  // Task removed
             }
-            
+
             prev = current;
             current = current->next;
         }

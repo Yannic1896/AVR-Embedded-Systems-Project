@@ -12,10 +12,6 @@ void toggleGreenLED(void) {
 }
 
 int main(void) {
-    // Initialize LEDs
-    led_redInit();
-    led_greenInit();
-    sei();
 
     // Initialize buttons
     button_init(false);
@@ -35,4 +31,3 @@ int main(void) {
 
     return 0;
 }
-

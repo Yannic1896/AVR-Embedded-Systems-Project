@@ -1,7 +1,9 @@
 #include "ses_scheduler.h"
 #include "ses_led.h"
+#include "ses_button.h"
 #include <avr/io.h>
 #include <stddef.h>
+#include "ses_display.h"
 
 // Task function prototypes
 void blink_red(void* param);
@@ -26,7 +28,7 @@ task_descriptor_t blinkYellowTask = {
 task_descriptor_t stopYellowTask = {
     .task = &stop_yellow_blink,
     .param = NULL,
-    .expire = 5000,  // Run after 5 seconds
+    .expire = 10000,  // Run after 5 seconds
     .period = 0      // One-shot task
 };
 
@@ -34,7 +36,15 @@ int main(void) {
     // Initialize hardware
     led_redInit();
     led_yellowInit();
+    display_init();
     
+    // Initially turn LED's off
+    led_redOff();
+    led_yellowOff();
+    
+    display_setCursor(0,0);
+    fprintf(displayout, "Disp\n");
+    display_update();
     // Initialize scheduler
     scheduler_init();
     

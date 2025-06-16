@@ -1,74 +1,67 @@
 #include "ses_adc.h"
 #include <avr/io.h>
-#include <stdint.h>
-#include <util/delay.h>
 
 
-#define ADC_TEMP_LOW      100  // 10 °C in tenths of a degree
-#define ADC_TEMP_HIGH     300  // 30 °C in tenths of a degree
-#define B_CONSTANT        3435      // B constant of the thermisto
-#define RN                10000     // Resistance of the thermistor
-#define RP                15000     // Pull-up resistor
-#define V_REF             5.0       // Reference voltage in volts
-
-
+#define ADC_TEMP_RAW_LOW       // ADC reading at 10.0°C
+#define ADC_TEMP_RAW_HIGH      // ADC reading at 30.0°C
+#define ADC_TEMP_LOW       100    // 10.0°C → in 0.1°C units
+#define ADC_TEMP_HIGH      300    // 30.0°C → in 0.1°C units
 
 void adc_init(void) {
-    // Configure the data direction registers for potentiometer, temperature, and light sensors
-    DDRF &= ~((1 << ADC_LIGHT_CH) | (1 << ADC_POTI_CH) | (1 << ADC_TEMP_CH));
+    
+    /*
+    Potentiometer Pin6 PortF
+    Temperature Sensor Pin 7 PortF
+    Light Sensor Pin0 PortF
+    */
 
-    // Deactivate internal pull-up resistors
-    PORTF &= ~((1 << ADC_LIGHT_CH) | (1 << ADC_POTI_CH) | (1 << ADC_TEMP_CH));
+    /* Set ADC pins as input and disable pull-up resistors */
+    DDRF &= ~((1 << PF0) | (1 << PF6) | (1 << PF7));     // Clear bits to set them as input
+    PORTF &= ~((1 << PF0) | (1 << PF6) | (1 << PF7));    // Clear bits to disable pullups
 
-    // Disable power reduction mode for the ADC module
-    PRR0 &= ~(1 << PRADC);
+    /* Disable power reduction for ADC */
+    PRR0 &= ~(1 << PRADC);          // clear bit in register PRR0
 
-    // Select external reference voltage (3.3V connected to AREF pin) and set ADC result right-adjusted
-    ADMUX = (0 << REFS1) | (0 << REFS0) | (0 << ADLAR); // External reference, right-adjusted
+    /* Configure ADMUX */
+    ADMUX = (0 << REFS1) | (0 << REFS0);  // Use voltage on AREF Pin as external reference 
+    ADMUX &= ~(1 << ADLAR);              // Right-adjusted result
 
-    // Enable ADC and set prescaler using the ADC_PRESCALE macro
-    ADCSRA = (1 << ADEN) | ADC_PRESCALE;
+    /* Configure ADCSRA */
+    ADCSRA = (1 << ADEN);                // Enable ADC hardware clears all other bits
+    ADCSRA |= ADC_PRESCALE;              // Set prescaler (111) -> 16 MHz / 128 = 125 kHz
 
-    // Do not enable auto triggering (ADATE is cleared by default)
 }
 
-/**
- * Read the raw ADC value of the given channel
- * @adc_channel The channel as element of the ADCChannels enum
- * @return The raw ADC value
- */
 uint16_t adc_read(uint8_t adc_channel) {
-    // Check if the provided channel is valid
-    if (adc_channel != ADC_LIGHT_CH && adc_channel != ADC_POTI_CH && adc_channel != ADC_TEMP_CH) {
-        return ADC_INVALID_CHANNEL; // Return invalid channel error
+    // Validate the input channel
+    if (adc_channel != ADC_LIGHT_CH &&
+        adc_channel != ADC_POTI_CH &&
+        adc_channel != ADC_TEMP_CH) {
+        return ADC_INVALID_CHANNEL;
     }
 
-    // Select the ADC channel by setting the lower bits of ADMUX
-    ADMUX = (ADMUX & 0xF0) | (adc_channel & 0x0F);
+    /* Set the ADC channel in ADMUX */
+    ADMUX = (ADMUX & 0xF0) | (adc_channel & 0x0F); // Keep REFS, clear MUX bits, set channel
+    ADMUX &= ~(1 << ADLAR);  // Ensure right-adjusted result
 
-    // Start the ADC conversion by setting the ADSC bit in ADCSRA
+    /* Start conversion */
     ADCSRA |= (1 << ADSC);
 
-    // Wait for the conversion to complete (polling the ADSC bit)
-    while (ADCSRA & (1 << ADSC)) {
-        // Busy wait until ADSC is cleared by hardware
-    }
+    /* Wait for conversion to complete */
+    while (ADCSRA & (1 << ADSC));
 
-    // Read the ADC result (ADCL must be read first, then ADCH)
-    uint16_t result = ADCL; // Read low byte
-    result |= (ADCH << 8);  // Read high byte and combine with low byte
+    /* Read ADC result: read ADCL first, then ADCH */
+    uint16_t result = ADC;
 
-    return result; // Return the raw ADC conversion result
+    return result;
 }
 
-/**
- * Read the current temperature
- * @return Temperature in tenths of degree celsius
- */
-int16_t adc_getTemperature(void){
 
-int32_t adc = adc_read(ADC_TEMP_CH);
+int16_t adc_getTemperature(void) {
+    int32_t adc = adc_read(ADC_TEMP_CH);
 
-return (int16_t)(((adc - ADC_TEMP_LOW) * (ADC_TEMP_HIGH - ADC_TEMP_LOW))/ (ADC_TEMP_HIGH - ADC_TEMP_LOW)) + ADC_TEMP_LOW;
-
+    // Linear interpolation in fixed-point arithmetic (scaled by 10)
+    /*return (int16_t)(((adc - ADC_TEMP_RAW_LOW) * (ADC_TEMP_HIGH - ADC_TEMP_LOW))
+            / (ADC_TEMP_RAW_HIGH - ADC_TEMP_RAW_LOW)) + ADC_TEMP_LOW;
+            */
 }

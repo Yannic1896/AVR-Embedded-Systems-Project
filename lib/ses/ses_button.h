@@ -7,10 +7,12 @@
 
 /* FUNCTION PROTOTYPES *******************************************************/
 
+typedef void (*pButtonCallback)(void);      // Function pointer
+
 /**
  * Initializes rotary encoder button and pushbutton
  */
-void button_init(bool debouncing);
+void button_init(bool useDebounce);
 
 /** 
  * Get the state of the pushbutton.
@@ -22,12 +24,10 @@ bool button_isPushButtonPressed(void);
  */
 bool button_isRotaryButtonPressed(void);
 
-typedef void (*pButtonCallback)(void);
-
-//Callback functions
 void button_setRotaryButtonCallback(pButtonCallback callback);
+
 void button_setPushButtonCallback(pButtonCallback callback);
 
-void button_checkState();
+void button_checkState(void);
 
 #endif /* SES_BUTTON_H_ */
