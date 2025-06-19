@@ -22,7 +22,7 @@ static void scheduler_update(void) {
     
     while (current != NULL) {
         if (current->expire > 0) {
-            current->expire--;
+            current->expire--;          // Decrement the expire counter
             
             if (current->expire == 0) {
                 current->execute = 1;

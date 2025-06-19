@@ -9,17 +9,10 @@
 
 #define POT_ADC_CHANNEL 
 
-volatile uint8_t fanOn = 0;
-
 void toggleFanTask(void *param);
 void potTask(void* param);
 
-task_descriptor_t ToggleFan = {
-    .task = &toggleFanTask,
-    .param = NULL,
-    .expire = 10, // 2s toggle
-    .period = 10
-};
+bool fan_running = false;
 
 task_descriptor_t PotTask = {
     .task = &potTask,
@@ -28,27 +21,27 @@ task_descriptor_t PotTask = {
     .period = 50
 };
 
-void toggleFanTask(void *param) {
-    static uint8_t lastButtonState = 0;
-    uint8_t currentState = button_isPushButtonPressed();
+task_descriptor_t buttonDebounce = {
+    .task = &button_checkState,
+    .param = NULL,
+    .expire = 5, // check button state every 5ms
+    .period = 5
+};
 
-    // Debounce: only toggle on rising edge
-    if (currentState && !lastButtonState) {
-        if (fanOn) {
-            fan_disable();
-            fanOn = 0;
-            led_redOff();
-        } else {
-            fan_enable();
-            fanOn = 1;
-            led_redOn();
-        }
+void toggleFan(void *param) {
+    if (!fan_running){
+        fan_enable();
+        fan_running = true;
+        led_redOn();
+    }else{
+        fan_disable();
+        fan_running = false;
+        led_redOff();
     }
-    lastButtonState = currentState;
 }
 
 void potTask(void *param) {
-    if (fanOn) {
+    if (fan_running) {
         uint16_t potValue = adc_read(ADC_POTI_CH);
         uint8_t duty = potValue >> 2; // Scale 10-bit ADC to 8-bit PWM (0..255)
         fan_setDutyCycle(duty);
@@ -61,18 +54,20 @@ int main(void) {
     // Init hardware
     led_redInit();
     led_redOff();
-    button_init(false); // false: use interrupt/scheduler, not timer debounce
+    button_init(true); // false: use interrupt/scheduler, not timer debounce
     fan_init();
     adc_init();
     scheduler_init();
 
+    button_setPushButtonCallback(toggleFan);
+
     // Schedule tasks: button check every 10ms, pot read every 50ms
-    scheduler_add(&ToggleFan);
+    scheduler_add(&buttonDebounce);
     scheduler_add(&PotTask);
 
     sei(); // Enable global interrupts
 
-    while (1) {
-        scheduler_run();
-    }
+    
+    scheduler_run();
+    
 }
