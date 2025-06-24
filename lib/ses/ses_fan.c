@@ -3,11 +3,13 @@
 
 #define FAN_DDR   DDRD
 #define FAN_PORT  PORTD
-#define FAN_PIN   PD4 
+#define FAN_PIN   PD4
+#define CONTROL_PIN PC6 
 
 void fan_init(void) {
     // Set PD2 (OC3A) as output
     FAN_DDR |= (1 << FAN_PIN);
+    DDRC |= (1 << CONTROL_PIN);
 
     // Enable Timer3 by clearing PRTIM3 in PRR1
     PRR1 &= ~(1 << PRTIM3);

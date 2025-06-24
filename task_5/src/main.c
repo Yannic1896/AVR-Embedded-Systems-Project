@@ -6,6 +6,8 @@
 #include "ses_adc.h"
 #include "ses_scheduler.h"
 #include <stddef.h>
+#include "ses_usbserial.h"
+#include "ses_fanspeed.h"
 
 #define POT_ADC_CHANNEL 
 
@@ -45,6 +47,9 @@ void potTask(void *param) {
         uint16_t potValue = adc_read(ADC_POTI_CH);
         uint8_t duty = potValue >> 2; // Scale 10-bit ADC to 8-bit PWM (0..255)
         fan_setDutyCycle(duty);
+        uint16_t rpm = 0;
+        rpm = fanspeed_getRecent();
+        printf(serialout, "RPM: %u\nDuty:  %u\n", rpm, duty);
     } else {
         fan_setDutyCycle(0);
     }
@@ -59,6 +64,9 @@ int main(void) {
     adc_init();
     scheduler_init();
 
+    usbserial_init();
+    
+
     button_setPushButtonCallback(toggleFan);
 
     // Schedule tasks: button check every 10ms, pot read every 50ms
@@ -70,4 +78,5 @@ int main(void) {
     
     scheduler_run();
     
+
 }
