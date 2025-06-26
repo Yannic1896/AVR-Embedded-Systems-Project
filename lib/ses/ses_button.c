@@ -44,6 +44,7 @@ void button_init(bool debouncing) {
         PCICR &= ~(1 << PCIE0);
         PCMSK0 &= ~((1 << BUTTON_ROTARY_BIT) | (1 << BUTTON_PUSH_BIT));
     } else {
+        /*
         // Initialization for direct interrupt technique
         // Enable pin change interrupt for PORTB in PCICR
         PCICR |= (1 << PCIE0); // PCIE0 corresponds to PORTB
@@ -52,7 +53,7 @@ void button_init(bool debouncing) {
         PCMSK0 |= (1 << BUTTON_ROTARY_BIT) | (1 << BUTTON_PUSH_BIT);
         
         // Stop the debounce timer if it was running
-        timer1_stop();
+        timer1_stop();*/
     }
 }
 

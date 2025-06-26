@@ -6,7 +6,4 @@ void fan_enable(void);
 void fan_disable(void);
 void fan_setDutyCycle(uint8_t dc);
 
-
-
-
 #endif /* SES_FAN_H */
