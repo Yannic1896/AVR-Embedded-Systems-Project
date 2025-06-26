@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "ses_timer.h"
+#include "ses_usbserial.h"
 #include "ses_scheduler.h"
 #include "util/atomic.h"
 
@@ -19,7 +20,7 @@ static task_descriptor_t * taskList = NULL;
 
 static void scheduler_update(void) {
     task_descriptor_t* current = taskList;
-    
+    //fprintf(serialout, "Scheduler");
     while (current != NULL) {
         if (current->expire > 0) {
             current->expire--;          // Decrement the expire counter
@@ -45,6 +46,7 @@ void scheduler_init() {
 }
 
 void scheduler_run() {
+
     while (1) {
         task_descriptor_t *current = taskList;
 

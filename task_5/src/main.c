@@ -41,11 +41,12 @@ task_descriptor_t buttonDebounce = {
 task_descriptor_t displayFanspeed = {
     .task = &displayCurrentRPM,
     .param = NULL,
-    .expire = 15, 
+    .expire = 1000, 
     .period = 1000   // update display every 1s
 };
 
 void toggleFan(void *param) {
+    fprintf(serialout, "Toggle");
     if (!fan_running){
         fan_enable();
         fan_running = true;
@@ -58,9 +59,13 @@ void toggleFan(void *param) {
 }
 
 void potTask(void *param) {
+    //fprintf(serialout, "Pot");
     if (fan_running) {
         uint16_t potValue = adc_read(ADC_POTI_CH);
         uint8_t duty = potValue >> 2; // Scale 10-bit ADC to 8-bit PWM (0..255)
+        if (duty >255){
+            duty = 255;
+        }
         fan_setDutyCycle(duty);
         uint16_t rpm = 0;
         rpm = fanspeed_getRecent();
@@ -73,39 +78,48 @@ void potTask(void *param) {
 }
 
 void displayCurrentRPM(void *param) {
+    //fprintf(serialout, "Display");
     fanspeed = fanspeed_getRecent();
     filteredFanspeed = fanspeed_getFiltered();
     display_setCursor(0, 0);
     fprintf(displayout,"RPM:  %u\nFiltered:  %u\nDuty:  %u\n", fanspeed, filteredFanspeed, dutycycle);
+    fprintf(serialout,"RPM:  %u\nFiltered:  %u\nDuty:  %u\n", fanspeed, filteredFanspeed, dutycycle);
     display_update();
+    display_clear();
 }
 
 int main(void) {
+
+    sei(); // Enable global interrupts
     // Init hardware
     led_redInit();
     led_yellowInit();
     led_redOff();
+    led_yellowOff();
     button_init(false); // false: use interrupt/scheduler, not timer debounce
     fan_init();
     adc_init();
+    fprintf(serialout, "Scheduler1");
+    
     scheduler_init();
 
     usbserial_init();
     
     fanspeed_init();
 
+    display_init();
+    
     button_setPushButtonCallback(toggleFan);
 
     // Schedule tasks: button check every 10ms, pot read every 50ms
     scheduler_add(&buttonDebounce);
     scheduler_add(&PotTask);
     scheduler_add(&displayFanspeed);
-
-    sei(); // Enable global interrupts
+    
+    //fprintf(serialout, "Scheduler");
 
     // RPM min: 451
     // RPM max: 2176
     scheduler_run();
-    
 
 }

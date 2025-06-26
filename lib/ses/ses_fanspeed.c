@@ -13,26 +13,10 @@ static volatile uint16_t edgeCount = 0;
 static volatile bool newMeasurement = false;
 static volatile uint16_t currentRpm = 0;
 
-
 // Add buffer to store recent RPMs
 static uint16_t rpmBuffer[FILTER_SIZE];
 static uint8_t rpmIndex = 0;   // Points to the next position to write
 
-void fanspeed_init(void) {
-    // Configure INT6 (PE6) for rising edge detection
-    EICRB |= (1 << ISC61) | (1 << ISC60); // Rising edge triggers interrupt
-    EIMSK |= (1 << INT6); // Enable INT6
-
-    timer1_setCallback(update_rpm)
-    timer1_start();
-
-}
-
-ISR(INT6_vect) {
-    // Interrupt service routine for tacho signal edges
-    edgeCount++;
-    led_yellowToggle(); // Visual feedback
-}
 
 void update_rpm(void) {
     cli(); // Atomic access to edgeCount
@@ -57,6 +41,24 @@ void update_rpm(void) {
 
     newMeasurement = true;
 }
+
+void fanspeed_init(void) {
+    // Configure INT6 (PE6) for rising edge detection
+    EICRB |= (1 << ISC61) | (1 << ISC60); // Rising edge triggers interrupt
+    EIMSK |= (1 << INT6); // Enable INT6
+
+    timer1_setCallback(&update_rpm);
+    timer1_start();
+    sei();
+
+}
+
+ISR(INT6_vect) {
+    // Interrupt service routine for tacho signal edges
+    edgeCount++;
+    led_yellowToggle(); // Visual feedback
+}
+
 
 uint16_t fanspeed_getRecent(void) {
     uint16_t rpm;
