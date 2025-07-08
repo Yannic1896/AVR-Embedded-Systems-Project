@@ -26,7 +26,7 @@ task_descriptor_t stopAlarm = {
 task_descriptor_t updateDisplay = {
     .task = &refreshDisplay,
     .param = NULL,
-    .expire = 0, // check button state every 5ms
+    .expire = 1, // check button state every 5ms
     .period = 1000
 };
 
@@ -34,14 +34,17 @@ task_descriptor_t updateDisplay = {
 fsm_return_status_t state_uninitialized_setHour(fsm_t *fsm, const event_t *event) {
     switch (event->signal) {
         case ENTRY:
-            fprintf(displayout,"00:00\nSet Time");
+            display_setCursor(0,0);
+            fprintf(displayout,"00:00\nSet Hour");
             display_update();
             fsm->timeSet.hour = 0;
             return RET_HANDLED;
 
         case ROTARYBUTTON_PRESSED:
             fsm->timeSet.hour = (fsm->timeSet.hour + 1) % 24;
-            fprintf(displayout, "%02d:00\n", fsm->timeSet.hour);
+            display_clear();
+            display_setCursor(0,0);
+            fprintf(displayout, "%02d:00\nSet Hour", fsm->timeSet.hour);
             display_update();
             return RET_HANDLED;
 
@@ -58,14 +61,18 @@ fsm_return_status_t state_uninitialized_setHour(fsm_t *fsm, const event_t *event
 fsm_return_status_t state_uninitialized_setMinute(fsm_t *fsm, const event_t *event) {
     switch (event->signal) {
         case ENTRY:
-            fprintf(displayout, "%02d:00\n", fsm->timeSet.hour);
+            display_clear();
+            display_setCursor(0,0);
+            fprintf(displayout, "%02d:00\nSet Minute", fsm->timeSet.hour);
             display_update();
             fsm->timeSet.minute = 0;
             return RET_HANDLED;
 
         case ROTARYBUTTON_PRESSED:
+            display_clear();
+            display_setCursor(0,0);
             fsm->timeSet.minute = (fsm->timeSet.minute + 1) % 60;
-            fprintf(displayout, "%02d:%02d\n", fsm->timeSet.hour, fsm->timeSet.minute);
+            fprintf(displayout, "%02d:%02d\nSet Minute", fsm->timeSet.hour, fsm->timeSet.minute);
             display_update();
             return RET_HANDLED;
 
@@ -94,7 +101,6 @@ fsm_return_status_t state_normalOperation(fsm_t *fsm, const event_t *event) {
 
         case PUSHBUTTON_PRESSED:
             fsm->state = state_setAlarm_hour;
-            scheduler_remove(&updateDisplay);
             return RET_TRANSITION;
 
         case TIME_MATCH:
@@ -104,6 +110,7 @@ fsm_return_status_t state_normalOperation(fsm_t *fsm, const event_t *event) {
             }
             return RET_IGNORED;
         case EXIT:
+            scheduler_remove(&updateDisplay);
             return RET_HANDLED;
         default:
             return RET_IGNORED;
@@ -113,15 +120,21 @@ fsm_return_status_t state_normalOperation(fsm_t *fsm, const event_t *event) {
 fsm_return_status_t state_setAlarm_hour(fsm_t *fsm, const event_t *event) {
     switch (event->signal) {
         case ENTRY:
-            fprintf(displayout,"00:00\nSet Time");
-            fsm->timeSet.hour = 0;
+            display_clear();
+            display_setCursor(0,0);
+            fprintf(displayout,"00:00\nSet Alarm Hour");
+            display_update();
+            fsm->alarmTime.hour = 0;
             return RET_HANDLED;
 
         case ROTARYBUTTON_PRESSED:
-            fsm->timeSet.hour = (fsm->timeSet.hour + 1) % 24;
-            fprintf(displayout, "%02d:00\n", fsm->timeSet.hour);
+            fsm->alarmTime.hour = (fsm->alarmTime.hour + 1) % 24;
+            display_clear();
+            display_setCursor(0,0);
+            fprintf(displayout, "%02d:00\nSet Alarm Hour", fsm->alarmTime.hour);
+            display_update();
             return RET_HANDLED;
-
+        
         case PUSHBUTTON_PRESSED:
             fsm->state = state_setAlarm_minute;
             return RET_TRANSITION;
@@ -135,13 +148,19 @@ fsm_return_status_t state_setAlarm_hour(fsm_t *fsm, const event_t *event) {
 fsm_return_status_t state_setAlarm_minute(fsm_t *fsm, const event_t *event) {
     switch (event->signal) {
         case ENTRY:
-            fprintf(displayout, "%02d:00\n", fsm->timeSet.hour);
-            fsm->timeSet.minute = 0;
+            display_clear();
+            display_setCursor(0,0);
+            fprintf(displayout, "%02d:00\nSet Alarm Minute", fsm->alarmTime.hour);
+            display_update();
+            fsm->alarmTime.minute = 0;
             return RET_HANDLED;
 
         case ROTARYBUTTON_PRESSED:
-            fsm->timeSet.minute = (fsm->timeSet.minute + 1) % 60;
-            fprintf(displayout, "%02d:%02d\n", fsm->timeSet.hour, fsm->timeSet.minute);
+            display_clear();
+            display_setCursor(0,0);
+            fsm->alarmTime.minute = (fsm->alarmTime.minute + 1) % 60;
+            fprintf(displayout, "%02d:%02d\nSet Alarm Minute", fsm->alarmTime.hour, fsm->alarmTime.minute);
+            display_update();
             return RET_HANDLED;
 
         case PUSHBUTTON_PRESSED:
@@ -189,6 +208,8 @@ void refreshDisplay(void* param){
     system_time_t bufferTime = scheduler_getTime();
     time_t currentTime;
     systemTimeToTime(bufferTime, &currentTime);
+    display_clear();
+    display_setCursor(0,0);
     fprintf(displayout, "%02d:%02d:%02d\n",
         currentTime.hour,
         currentTime.minute,

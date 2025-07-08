@@ -34,6 +34,7 @@ struct fsm_s {
     state_t state; //< current state, pointer to the state handler functions
     bool isAlarmEnabled; //< flag for the alarm status
     time_t timeSet; //< multi-purpose var for system or alarm time
+    time_t alarmTime;
 };
 
 // Event Structure

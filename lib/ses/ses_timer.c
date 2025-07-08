@@ -37,7 +37,7 @@ void timer1_setCallback(pTimerCallback cb) {
 void timer1_start() {
     TCCR1B |= (1 << WGM12);                       // CTC mode
     TCCR1B |= (1 << CS11) | (1 << CS10);          // Prescaler = 64
-    OCR1A = 15624;                                  // Set compare value for 5ms
+    OCR1A = TIMER1_CYC_FOR_5MILLISEC;                                  // Set compare value for 5ms
     TIMSK1 |= (1 << OCIE1A);                      // Enable Timer1 Compare A interrupt
     TIFR1 |= (1 << OCF1A);                        // Clear interrupt flag
 }
