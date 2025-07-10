@@ -10,30 +10,31 @@ void turnOffRedLED(void* param);
 void refreshDisplay(void* param);
 void checkAlarmMatch(void* param);
 
+// --- Task Descriptor Declarations ---
 task_descriptor_t blinkLED = {
     .task = &toggleRedLED,
     .param = NULL,
-    .expire = 0, // check button state every 5ms
+    .expire = 1, 
     .period = 250
 };
 
 task_descriptor_t stopAlarm = {
     .task = &turnOffRedLED,
     .param = NULL,
-    .expire = 5000, // check button state every 5ms
+    .expire = 5000, 
     .period = 0
 };
 
 task_descriptor_t updateDisplay = {
     .task = &refreshDisplay,
     .param = NULL,
-    .expire = 1, // check button state every 5ms
+    .expire = 1, 
     .period = 1000
 };
 
 task_descriptor_t alarmMatchCheck = {
     .task = &checkAlarmMatch,
-    .param = NULL,   // Will assign fsm in ENTRY
+    .param = NULL,   
     .expire = 1,
     .period = 1000
 };
@@ -74,6 +75,8 @@ fsm_return_status_t state_uninitialized_setMinute(fsm_t *fsm, const event_t *eve
             fprintf(displayout, "%02d:00\nSet Minute", fsm->timeSet.hour);
             display_update();
             fsm->timeSet.minute = 0;
+            fsm->timeSet.second = 0;
+            fsm->timeSet.milli = 0;
             return RET_HANDLED;
 
         case ROTARYBUTTON_PRESSED:
@@ -103,6 +106,7 @@ fsm_return_status_t state_normalOperation(fsm_t *fsm, const event_t *event) {
 
             alarmMatchCheck.param = fsm;
             scheduler_add(&alarmMatchCheck);
+            //scheduler_remove(&blinkLED);
             return RET_HANDLED;
 
         case ROTARYBUTTON_PRESSED:
@@ -165,6 +169,8 @@ fsm_return_status_t state_setAlarm_minute(fsm_t *fsm, const event_t *event) {
             fprintf(displayout, "%02d:00\nSet Alarm Minute", fsm->alarmTime.hour);
             display_update();
             fsm->alarmTime.minute = 0;
+            fsm->alarmTime.second = 0;
+            fsm->alarmTime.milli = 0;
             return RET_HANDLED;
 
         case ROTARYBUTTON_PRESSED:
@@ -189,6 +195,7 @@ fsm_return_status_t state_setAlarm_minute(fsm_t *fsm, const event_t *event) {
 fsm_return_status_t state_alarmActive(fsm_t *fsm, const event_t *event) {
     switch (event->signal) {
         case ENTRY:
+            stopAlarm.param = fsm;
             scheduler_add(&blinkLED);
             scheduler_add(&stopAlarm);
             return RET_HANDLED;
@@ -201,7 +208,12 @@ fsm_return_status_t state_alarmActive(fsm_t *fsm, const event_t *event) {
             fsm->state = state_normalOperation;
             return RET_TRANSITION;
         case EXIT:
+            scheduler_remove(&blinkLED);
+            led_redOff();
             return RET_HANDLED;
+        case TIMEOUT:
+            fsm->state = state_normalOperation;
+            return RET_TRANSITION;
         default:
             return RET_IGNORED;
     }
@@ -212,8 +224,11 @@ void toggleRedLED(void* param){
 }
 
 void turnOffRedLED(void* param){
-    scheduler_remove(&blinkLED);
-    led_redOff();
+    fsm_t* fsm = (fsm_t*)param;
+    //scheduler_remove(&blinkLED);
+    //led_redOff();
+    static const event_t matchEvent = {.signal = TIMEOUT};
+    fsm_dispatch(fsm, &matchEvent);  // or use scheduler if needed
 }
 
 void refreshDisplay(void* param){
@@ -228,6 +243,7 @@ void refreshDisplay(void* param){
         currentTime.second
     );
     display_update();
+    led_greenToggle();
 }
 
 void checkAlarmMatch(void* param) {

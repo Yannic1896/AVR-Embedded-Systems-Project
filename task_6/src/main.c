@@ -72,6 +72,7 @@ int main(void){
     display_clear();
     scheduler_init();
     led_redInit();
+    led_greenInit();
     led_yellowInit();
     led_redOff();
     led_yellowOff();

@@ -37,10 +37,10 @@ static void scheduler_update(void) {
             }
         }
         current = current->next;
-        systemTime++;           // Increase system time every ms
-        if(systemTime > 86400000){          // Reset after 24 hours
-            systemTime = 0;
-        }
+    }
+    systemTime++;           // Increase system time every ms
+    if(systemTime > 86400000UL){          // Reset after 24 hours
+        systemTime = 0;
     }
 }
 
@@ -148,7 +148,7 @@ system_time_t scheduler_getTime(void){
 }
 
 void scheduler_setTime(system_time_t time){
-    if (time < 86400000){
+    if (time < 86400000UL){
         systemTime = time;       
     }
 }
