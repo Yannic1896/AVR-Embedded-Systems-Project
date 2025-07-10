@@ -7,6 +7,7 @@
 #include <util/delay.h>
 #include "ses_usbserial.h"
 
+
 typedef enum
 {
     RED,
@@ -135,7 +136,7 @@ int main(void)
     led_yellowInit();
     led_greenInit();
     display_init();
-    button_init(true);
+    button_init(false);
 
     // set Callback functions
     button_setPushButtonCallback(onPushButtonPressed);

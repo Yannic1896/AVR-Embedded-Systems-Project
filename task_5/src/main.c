@@ -5,6 +5,7 @@
 #include "ses_fan.h"
 #include "ses_adc.h"
 #include "ses_scheduler.h"
+#include "ses_display.h"
 #include <stddef.h>
 #include "ses_usbserial.h"
 #include "ses_fanspeed.h"
@@ -54,6 +55,9 @@ void potTask(void *param) {
     if (fan_running) {
         uint16_t potValue = adc_read(ADC_POTI_CH);
         uint8_t duty = potValue >> 2; // Scale 10-bit ADC to 8-bit PWM (0..255)
+        if (duty >255){
+            duty = 255;
+        }
         fan_setDutyCycle(duty);
         lastDuty = duty; // Store for display
     } else {
@@ -73,13 +77,30 @@ void displayTask(void *param) {
     display_update(); 
 }
 
+void displayCurrentRPM(void *param) {
+    //fprintf(serialout, "Display");
+    fanspeed = fanspeed_getRecent();
+    filteredFanspeed = fanspeed_getFiltered();
+    display_setCursor(0, 0);
+    fprintf(displayout,"RPM:  %u\nFiltered:  %u\nDuty:  %u\n", fanspeed, filteredFanspeed, dutycycle);
+    fprintf(serialout,"RPM:  %u\nFiltered:  %u\nDuty:  %u\n", fanspeed, filteredFanspeed, dutycycle);
+    display_update();
+    display_clear();
+}
+
 int main(void) {
+
+    sei(); // Enable global interrupts
     // Init hardware
     led_redInit();
+    led_yellowInit();
     led_redOff();
+    led_yellowOff();
     button_init(false); // false: use interrupt/scheduler, not timer debounce
     fan_init();
     adc_init();
+    fprintf(serialout, "Scheduler1");
+    
     scheduler_init();
     display_init();
     usbserial_init();
@@ -92,7 +113,9 @@ int main(void) {
     scheduler_add(&PotTask);
     scheduler_add(&DisplayTask); 
 
-    sei(); // Enable global interrupts
+    // RPM min: 451
+    // RPM max: 2176
+    scheduler_run();
 
     scheduler_run();
 }

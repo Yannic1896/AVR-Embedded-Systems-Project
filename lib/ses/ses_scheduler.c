@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "ses_timer.h"
+#include "ses_usbserial.h"
 #include "ses_scheduler.h"
 #include "util/atomic.h"
 
@@ -14,15 +15,17 @@
  */
 static task_descriptor_t * taskList = NULL;
 
+static system_time_t systemTime = 0;
+
 
 /* FUNCTION DEFINITION *************************************************/
 
 static void scheduler_update(void) {
     task_descriptor_t* current = taskList;
-    
+    //fprintf(serialout, "Scheduler");
     while (current != NULL) {
         if (current->expire > 0) {
-            current->expire--;
+            current->expire--;          // Decrement the expire counter
             
             if (current->expire == 0) {
                 current->execute = 1;
@@ -35,6 +38,10 @@ static void scheduler_update(void) {
         }
         current = current->next;
     }
+    systemTime++;           // Increase system time every ms
+    if(systemTime > 86400000UL){          // Reset after 24 hours
+        systemTime = 0;
+    }
 }
 
 void scheduler_init() {
@@ -45,6 +52,7 @@ void scheduler_init() {
 }
 
 void scheduler_run() {
+
     while (1) {
         task_descriptor_t *current = taskList;
 
@@ -133,4 +141,34 @@ void scheduler_remove(const task_descriptor_t * toRemove) {
             current = current->next;
         }
     }
+}
+
+system_time_t scheduler_getTime(void){
+    return systemTime;
+}
+
+void scheduler_setTime(system_time_t time){
+    if (time < 86400000UL){
+        systemTime = time;       
+    }
+}
+
+system_time_t timeToSystemTime(const time_t* t) {
+    return (t->hour * 3600000UL) + 
+           (t->minute * 60000UL) + 
+           (t->second * 1000UL) + 
+           (t->milli);
+}
+
+void systemTimeToTime(system_time_t sysTime, time_t* t) {
+    t->hour = sysTime / 3600000UL;
+    sysTime %= 3600000UL;
+
+    t->minute = sysTime / 60000UL;
+    sysTime %= 60000UL;
+
+    t->second = sysTime / 1000UL;
+    sysTime %= 1000UL;
+
+    t->milli = sysTime;
 }
