@@ -114,14 +114,14 @@ ISR(PCINT0_vect) {
     // Check if the rotary button interrupt is unmasked and callback is set
     if ((PCMSK0 & (1 << BUTTON_ROTARY_BIT)) && rotaryButtonCallback != NULL) {
         if (button_isRotaryButtonPressed()&& pushButtonCallback != NULL) {
-            rotaryButtonCallback(); // Execute rotary button callback
+            rotaryButtonCallback();
         }
     }
 
     // Check if the push button interrupt is unmasked and callback is set
     if ((PCMSK0 & (1 << BUTTON_PUSH_BIT)) && pushButtonCallback != NULL) {
         if (button_isPushButtonPressed()&& rotaryButtonCallback != NULL) {
-            pushButtonCallback(); // Execute push button callback
+            pushButtonCallback();
         }
     }
 }

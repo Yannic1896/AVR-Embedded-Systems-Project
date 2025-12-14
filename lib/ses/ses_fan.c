@@ -43,5 +43,5 @@ void fan_disable(void) {
     PORTD &= ~(1 << FAN_PIN); // Set PD2 low to stop PWM output
     // Set duty cycle to 0 (fan off)
     OCR3A = 0;
-    // Optionally, power off the fan supply if controlled by another pin.
+
 }

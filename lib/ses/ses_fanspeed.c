@@ -5,8 +5,6 @@
 #include "ses_led.h"
 #include <stdbool.h>
 
-//Method A: More intuitive approach to caculate fan speed
-
 // Module-private variables
 static volatile uint16_t edgeCount = 0;
 static volatile bool newMeasurement = false;
@@ -64,10 +62,10 @@ ISR(TIMER1_COMPA_vect) {
     if (edges == 0) {
         // Fan has stopped
         currentRpm = 0;
-        led_redOn(); // Turn on red LED when fan stops
+        led_redOn();
     } else {
         currentRpm = (edges * 60) / PULSES_PER_REVOLUTION;
-        led_redOff(); // Turn off red LED when fan is running
+        led_redOff();
     }
     
     // Store the measurement in the ring buffer

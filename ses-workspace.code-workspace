@@ -4,68 +4,25 @@
 			"path": "lib"
 		},
 		{
-			"path": "task_1-1"
+			"path": "task_2-adc"
 		},
 		{
-			"path": "task_1-2"
+			"path": "task_3-button_debouncing"
 		},
 		{
-			"path": "task_1-3"
+			"path": "task_3-hardware_timer"
 		},
 		{
-			"path": "task_1-4"
+			"path": "task_4-preemptive_multitasking"
 		},
 		{
-			"path": "task_1-5"
+			"path": "task_4-scheduler"
 		},
 		{
-			"path": "task_1-6"
+			"path": "task_5-pwm_fan"
 		},
 		{
-            "path": "task_2-3"
-        },
-        {
-            "path": "task_2-4"
-        },
-        {
-            "path": "task_2-5"
-        },
-        {
-            "path": "task_2-6"
-        }
-        {
-            "path": "task_2-7"
-        }
-        {
-            "path": "task_2-8"
-        }
-        {
-            "path": "task_3-1"
-        }
-        {
-            "path": "task_3-2"
-        }
-				{
-			"path": "task_3-3"
-		}	
-			{
-			"path": "task_4-1"
+			"path": "task_6-alarm"
 		}
-		{
-			"path": "task_4-2"
-		},
-		{
-			"path": "task_4-3"
-		},
-		{
-			"path": "task_5"
-		},
-		{
-			"path": "task_5-4"
-		},
-		{
-			"path": "task_6"
-		},
-
 	]
 }

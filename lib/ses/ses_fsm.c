@@ -299,7 +299,6 @@ void fsm_dispatch(fsm_t *fsm, const event_t *event)
 /* sets and calls initial state of state machine */
 void fsm_init(fsm_t *fsm, state_t init)
 {
-    //... other initialization
     const event_t entryEvent = {.signal = ENTRY};
     fsm->state = init;
     fsm->state(fsm, &entryEvent);

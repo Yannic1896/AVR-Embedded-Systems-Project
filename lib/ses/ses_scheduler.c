@@ -31,13 +31,12 @@ static void scheduler_update(void)
     {
         if (current->expire > 0)
         {
-            current->expire--; // Decrement the expire counter
+            current->expire--;
 
             if (current->expire == 0)
             {
                 current->execute = 1;
 
-                // Reset expiration time for periodic tasks
                 if (current->period > 0)
                 {
                     current->expire = current->period;
@@ -84,7 +83,7 @@ void scheduler_run()
 
             if (shouldExecute)
             {
-                current->task(current->param); // Run the task
+                current->task(current->param);
 
                 if (current->period > 0)
                 {
