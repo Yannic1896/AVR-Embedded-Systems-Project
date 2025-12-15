@@ -1,9 +1,8 @@
 # AVR Embedded Systems Lab
-This repository contains comprehensive lab assignments for the **Software for Embedded Systems (SES)** course, implementing advanced embedded programming concepts on AVR ATmega32U4 microcontroller.
-
+ 
 ## 📋 Project Overview
 
-C programming on ATmega32U4 demonstrating core embedded systems concepts:
+This repository contains C programming on AVR ATmega32U4 demonstrating core embedded systems concepts:
 
 **Key Concepts Implemented:**
 - **ADC interfacing** - 10-bit analog sensor reading (potentiometer, light, temperature)
